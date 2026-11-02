@@ -1,0 +1,117 @@
+# vLLM model server labeled for llm-d InferencePool discovery.
+# Model ids come from the rlm-model-config ConfigMap (rendered from settings.yaml).
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-d-inference-gateway
+  namespace: llm-d
+  labels:
+    app: llm-d-inference-gateway
+    llm-d.ai/inference-serving: "true"
+spec:
+  type: NodePort
+  selector:
+    app: llm-d-inference-gateway
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      nodePort: 30080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-d-vllm
+  namespace: llm-d
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm-d-inference-gateway
+  template:
+    metadata:
+      labels:
+        app: llm-d-inference-gateway
+        llm-d.ai/inference-serving: "true"
+        llm-d.ai/engine-type: vllm
+        llm-d.ai/role: prefill-decode
+    spec:
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:latest
+          imagePullPolicy: IfNotPresent
+          args:
+            - --model
+            - $(CHAT_MODEL_HF_ID)
+            - --served-model-name
+            - $(CHAT_MODEL_SERVED_NAME)
+            - --served-model-name
+            - $(CHAT_MODEL_HF_ID)
+            - --max-model-len
+            - $(CHAT_MODEL_MAX_LEN)
+            - --gpu-memory-utilization
+            - "0.82"
+            - --enable-auto-tool-choice
+            - --tool-call-parser
+            - $(CHAT_TOOL_CALL_PARSER)
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+          envFrom:
+            - configMapRef:
+                name: rlm-model-config
+          env:
+            - name: HF_HOME
+              value: /huggingface
+            - name: HUGGINGFACE_HUB_CACHE
+              value: /huggingface/hub
+            - name: NVIDIA_VISIBLE_DEVICES
+              value: all
+            - name: NVIDIA_DRIVER_CAPABILITIES
+              value: compute,utility
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: hf
+              mountPath: /huggingface
+            - name: nvidia
+              mountPath: /dev/nvidia0
+            - name: nvidiactl
+              mountPath: /dev/nvidiactl
+            - name: nvidiauvm
+              mountPath: /dev/nvidia-uvm
+            - name: nvidiauvmtools
+              mountPath: /dev/nvidia-uvm-tools
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 60
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 180
+            periodSeconds: 10
+      volumes:
+        - name: hf
+          hostPath:
+            path: /huggingface
+            type: DirectoryOrCreate
+        - name: nvidia
+          hostPath:
+            path: /dev/nvidia0
+        - name: nvidiactl
+          hostPath:
+            path: /dev/nvidiactl
+        - name: nvidiauvm
+          hostPath:
+            path: /dev/nvidia-uvm
+        - name: nvidiauvmtools
+          hostPath:
+            path: /dev/nvidia-uvm-tools

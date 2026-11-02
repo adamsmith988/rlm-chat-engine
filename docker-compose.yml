@@ -1,0 +1,103 @@
+# Local control plane. Do not start GPU / k3d from this file.
+# Model HF ids and served names come from config/settings.yaml via env.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rlm
+      POSTGRES_PASSWORD: rlm_pass
+      POSTGRES_DB: rlm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+
+  storage:
+    build: ./services/storage
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://rlm:rlm_pass@postgres:5432/rlm
+      QDRANT_URL: http://qdrant:6333
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8004:8004"
+    depends_on:
+      - postgres
+      - qdrant
+
+  llm-proxy:
+    build: ./services/llm-proxy
+    env_file: .env
+    environment:
+      STORAGE_URL: http://storage:8004
+      DEFAULT_BACKEND: vllm
+    ports:
+      - "8005:8005"
+    depends_on:
+      - storage
+
+  tool-runner:
+    build: ./services/tool-runner
+    env_file: .env
+    environment:
+      TOOLS_MODULE_PATH: /app/modules/tools
+      PLUGINS_MODULE_PATH: /app/modules/plugins
+      LLM_PROXY_URL: http://llm-proxy:8005
+      STORAGE_URL: http://storage:8004
+      TOOL_RUNNER_RBAC_ENABLED: "false"
+    volumes:
+      - ./modules:/app/modules:ro
+    ports:
+      - "8002:8002"
+    depends_on:
+      - llm-proxy
+      - storage
+
+  orchestrator:
+    build: ./services/orchestrator
+    env_file: .env
+    environment:
+      LLM_PROXY_URL: http://llm-proxy:8005
+      TOOL_RUNNER_URL: http://tool-runner:8002
+      STORAGE_URL: http://storage:8004
+      QDRANT_URL: http://qdrant:6333
+      DEFAULT_CHAT_ORCHESTRATOR: rlm
+      SKILLS_MARKDOWN_DIR: /app/skills
+      AIV2_RLM_SKILLS_DIR: /app/skills
+      TOOL_PERMISSION_ENFORCEMENT: "false"
+      UI_PUBLIC_ORCHESTRATOR_URL: http://127.0.0.1:8001
+      UI_PUBLIC_STORAGE_URL: http://127.0.0.1:8004
+    volumes:
+      - ./skills:/app/skills:ro
+      - ./config:/app/config:ro
+      - ./packages/runtime-config/src:/opt/runtime-config:ro
+    ports:
+      - "8001:8001"
+    depends_on:
+      - llm-proxy
+      - tool-runner
+      - storage
+      - qdrant
+
+  ui:
+    image: nginx:alpine
+    volumes:
+      - ./ui:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - orchestrator
+
+volumes:
+  pgdata:

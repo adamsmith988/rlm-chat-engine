@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aiv2.local/schemas/agent-runtimes-v1.json",
+  "title": "Agent GET /runtimes response",
+  "type": "object",
+  "required": ["object", "agent_api_version", "data"],
+  "properties": {
+    "object": { "const": "list" },
+    "agent_api_version": { "type": "integer", "minimum": 1 },
+    "service_version": { "type": "string" },
+    "node_id": { "type": "string" },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "public_id",
+          "tasks",
+          "default_task",
+          "enabled",
+          "probe",
+          "default_api_protocol",
+          "endpoint_capabilities"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "public_id": { "type": "string" },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "tasks": { "type": "array", "items": { "type": "string" } },
+          "default_task": { "type": "string" },
+          "shared_service": { "type": "boolean" },
+          "openai_base": { "type": "boolean" },
+          "enabled": { "type": "boolean" },
+          "probe": {
+            "type": "object",
+            "required": ["method", "path_template"],
+            "properties": {
+              "method": { "type": "string" },
+              "path_template": { "type": "string" },
+              "secondary": { "type": "array", "items": { "type": "string" } },
+              "ready_status": { "type": "array", "items": { "type": "integer" } }
+            }
+          },
+          "default_api_protocol": { "type": "string" },
+          "endpoint_capabilities": { "type": "object" },
+          "inference_url_template": { "type": "string" },
+          "verify_mode": { "type": "string" },
+          "mother_timeout_sec": { "type": "integer" }
+        }
+      }
+    }
+  }
+}

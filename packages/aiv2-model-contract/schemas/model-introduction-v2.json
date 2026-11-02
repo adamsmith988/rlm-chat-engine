@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aiv2.local/schemas/model-introduction-v2.json",
+  "title": "AIv2 Model Introduction",
+  "type": "object",
+  "required": ["schema_version", "identity", "hub", "artifacts", "io", "serve"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "identity": {
+      "type": "object",
+      "properties": {
+        "logical_id": { "type": ["string", "null"] },
+        "suggested_logical_id": { "type": ["string", "null"] },
+        "display_name": { "type": ["string", "null"] },
+        "upstream_model": { "type": ["string", "null"] },
+        "identity_hf": { "type": ["string", "null"] },
+        "weight_content_id": { "type": ["string", "null"] },
+        "canonical_model_key": { "type": ["string", "null"] },
+        "storage_path": { "type": ["string", "null"] }
+      }
+    },
+    "hub": {
+      "type": "object",
+      "properties": {
+        "pipeline_tag": { "type": ["string", "null"] },
+        "hf_modality": { "type": ["string", "null"] },
+        "library_name": { "type": ["string", "null"] },
+        "base_model": {},
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "known_in_hf_catalog": { "type": "boolean" }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "diffusers",
+            "hf_transformers",
+            "gguf",
+            "onnx",
+            "triton",
+            "checkpoint",
+            "comfy_asset",
+            "other"
+          ]
+        },
+        "transformers": { "type": "object" },
+        "diffusers": { "type": "object" },
+        "gguf": { "type": "object" },
+        "tensor_io": { "type": ["object", "null"] }
+      }
+    },
+    "io": {
+      "type": "object",
+      "properties": {
+        "input_modalities": { "type": "array", "items": { "type": "string" } },
+        "output_modalities": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": ["number", "null"] },
+        "needs_review": { "type": "boolean" },
+        "sources": { "type": "array" },
+        "usage_hint": { "type": ["string", "null"] }
+      }
+    },
+    "serve": {
+      "type": "object",
+      "properties": {
+        "runtime": { "type": ["string", "null"] },
+        "api": { "type": ["string", "null"] },
+        "api_protocol": { "type": ["string", "null"] },
+        "endpoint_path": { "type": ["string", "null"] },
+        "ui_profile": { "type": ["string", "null"] },
+        "request_shape": {
+          "type": ["string", "null"],
+          "description": "Logical request payload shape for text-capable models (e.g. messages, prompt, state_plus_typed_questions)."
+        },
+        "endpoint_capabilities": { "type": "object" },
+        "mother_timeout_sec": { "type": ["number", "null"] }
+      }
+    },
+    "run_schema": { "type": ["object", "null"] },
+    "deploy": { "type": "object" }
+  }
+}

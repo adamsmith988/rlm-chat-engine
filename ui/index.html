@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RLM Chat</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header>
+    <h1 id="app-title">RLM Chat</h1>
+    <p class="meta" id="engine-meta"></p>
+  </header>
+  <main>
+    <ol id="log" aria-live="polite"></ol>
+    <form id="composer">
+      <textarea id="message" rows="3" required placeholder="Message"></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </main>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

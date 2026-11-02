@@ -1,0 +1,6 @@
+- Goal: {goal}
+- To-do list: {todo}
+- Done: {done}
+- Still to do: {remaining}
+- Problems: {problems}
+- Next step: {next_step}
